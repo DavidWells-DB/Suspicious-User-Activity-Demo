@@ -2,7 +2,7 @@
 # MAGIC %md
 # MAGIC ## Cyber Use Case
 # MAGIC ### Detection Maturity Curve
-# MAGIC ![Detection Framework](files/Demos/detection_library/DetectionFramework7.png)
+# MAGIC <img src="https://raw.githubusercontent.com/DavidWells-DB/Suspicious-User-Activity-Demo/master/Images/DetectionFramework.png" />
 
 # COMMAND ----------
 
@@ -28,14 +28,14 @@
 # COMMAND ----------
 
 # DBTITLE 1,Load Data
-# MAGIC %run "../0.0 Prep/0.1 Data Creation" 
+# MAGIC %run "./0.1 Data Creation"
 
 # COMMAND ----------
 
 # MAGIC %md 
 # MAGIC
 # MAGIC ### **Pattern-Based Rules (Reactive)** 
-# MAGIC ![Pattern Rules](files/Demos/detection_library/DetectionFramework8.png)
+# MAGIC <img src="https://raw.githubusercontent.com/DavidWells-DB/Suspicious-User-Activity-Demo/master/Images/DetectionFramework1.png" />
 # MAGIC
 # MAGIC Basic rules, searching for specific patterns or behaviors. They trigger an alert upon detecting known malicious IP addresses or sequences of commands associated with a particular type of attack.
 # MAGIC
@@ -58,7 +58,7 @@ df.show()
 # MAGIC %md 
 # MAGIC
 # MAGIC ### **Threshold-Based Rules (Proactive)** 
-# MAGIC ![Pattern Rules](files/Demos/detection_library/DetectionFramework9.png)
+# MAGIC <img src="https://raw.githubusercontent.com/DavidWells-DB/Suspicious-User-Activity-Demo/master/Images/DetectionFramework2.png" />
 # MAGIC
 # MAGIC These rules are more advanced, triggering an alert when a predefined limit is exceeded. An understanding of the normal operating parameters is required to set these rules, which may alert, for instance, when there are an unusual number of failed login attempts within a specified period.
 # MAGIC
@@ -76,7 +76,7 @@ df.display()
 # MAGIC %md
 # MAGIC
 # MAGIC ### **Anomaly-Based Rules (Predictive)** 
-# MAGIC ![Pattern Rules](files/Demos/detection_library/DetectionFramework10.png)
+# MAGIC <img src="https://raw.githubusercontent.com/DavidWells-DB/Suspicious-User-Activity-Demo/master/Images/DetectionFramework3.png" />
 # MAGIC
 # MAGIC These rules employ statistical methods to establish a model of normal behavior, subsequently alerting on significant deviations from this model. Techniques such as clustering, regression, or outlier detection may be utilized. These rules are probabilistic and require an advanced understanding of the data.
 
@@ -94,7 +94,7 @@ df.display()
 # MAGIC %md
 # MAGIC
 # MAGIC ### **Trending-Based Rules (Intelligent Predictive Alerts)** 
-# MAGIC ![Trend-based Rules](files/Demos/detection_library/DetectionFramework11.png)
+# MAGIC <img src="https://raw.githubusercontent.com/DavidWells-DB/Suspicious-User-Activity-Demo/master/Images/DetectionFramework4.png" />
 # MAGIC
 # MAGIC These rules analyze trends over time to detect potential threats. They may alert on a gradual increase in network traffic to a certain server, even if the traffic at any given time doesn't exceed a specific threshold. The ability to analyze and interpret trends in data is required for this type of rule.
 
@@ -109,10 +109,10 @@ df_std.display()
 # MAGIC %md
 # MAGIC
 # MAGIC ### **Machine Learning-Based Rules (Intelligent Predictive Alerts)** 
-# MAGIC ![Trend-based Rules](files/Demos/detection_library/DetectionFramework12.png)
+# MAGIC <img src="https://raw.githubusercontent.com/DavidWells-DB/Suspicious-User-Activity-Demo/master/Images/DetectionFramework5.png" />
 # MAGIC
 # MAGIC Machine Learning-Based Rules (Optimized): These are the most advanced types of rules, utilizing machine learning algorithms for threat detection. This could involve supervised learning (where the algorithm is trained on labeled examples of malicious and benign activity) or unsupervised learning (where the algorithm learns to detect anomalies without labeled examples). These rules require significant investment in data science and machine learning expertise.
 # MAGIC
 # MAGIC For Machine Learning, I am going to reference the DNS Analytics project <a href="https://www.databricks.com/solutions/accelerators/threat-detection">Detecting AgentTeslaRAT with Databricks</a> (Github <a href="https://github.com/databricks-industry-solutions/dns-analytics">here</a>) project that walks through the entire lifecycle of training and serving a Machine Learning model for cybersecurity use cases.
 # MAGIC
-# MAGIC <img src="https://camo.githubusercontent.com/b99e286d2d03999e22c4ce2a24cc40f6fbbda650beb6f4a5944cf76d05bc212c/68747470733a2f2f7777772e64617461627269636b732e636f6d2f77702d636f6e74656e742f75706c6f6164732f323032302f31302f626c6f672d646574656374696e672d6372696d696e616c732d322e706e67">
+# MAGIC <img src='https://www.databricks.com/wp-content/uploads/2020/10/blog-detecting-criminals-1.png'>

@@ -2,7 +2,7 @@
 # MAGIC %md
 # MAGIC
 # MAGIC ### **Trending-Based Rules (Intelligent Predictive Alerts)** 
-# MAGIC ![Trend-based Rules](files/Demos/detection_library/DetectionFramework11.png)
+# MAGIC <img src="https://raw.githubusercontent.com/DavidWells-DB/Suspicious-User-Activity-Demo/master/Images/DetectionFramework4.png" />
 # MAGIC
 # MAGIC These rules analyze trends over time to detect potential threats. They may alert on a gradual increase in network traffic to a certain server, even if the traffic at any given time doesn't exceed a specific threshold. The ability to analyze and interpret trends in data is required for this type of rule.
 

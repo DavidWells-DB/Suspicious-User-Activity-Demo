@@ -39,16 +39,16 @@
 # MAGIC %md
 # MAGIC ### Updates
 # MAGIC
-# MAGIC ##### July 11, 2023
+# MAGIC ##### September 11, 2023
 # MAGIC Updated to include large outbound email detection
 # MAGIC
-# MAGIC ##### July 2, 2023
+# MAGIC ##### September 2, 2023
 # MAGIC Initial creation of notebook
 
 # COMMAND ----------
 
 # DBTITLE 1,Load Helper Methods
-# MAGIC %run "../0.0 Prep/0.0 Helper Methods"
+# MAGIC %run "./0.0 Helper Methods"
 
 # COMMAND ----------
 

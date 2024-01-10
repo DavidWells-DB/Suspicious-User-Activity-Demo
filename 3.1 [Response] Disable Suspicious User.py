@@ -112,11 +112,28 @@ print("---------------------------------------")
 
 # COMMAND ----------
 
-# DBTITLE 1,Disable User in Azure AD
+# DBTITLE 1,Set Notebook Variables
 import requests
 from msal import ConfidentialClientApplication
 
 
+###########################
+## CHANGE ME AS REQUIRED ##
+###########################
+
+# Set this variable to True if the Graph API token and user account is configured.
+ENABLE_DEMO = False
+
+# Create a Databricks secret and set three keys that are specific to your Azure environment
+# To set up an Azure developer environment, follow https://azure.microsoft.com/en-ca/products/deployment-environments and create a Databricks secret 
+SECRET_SCOPE = "suspicious_user_demo_scope"
+AZURE_CLIENT_ID_KEY = "Azure_Client_ID"
+AZURE_APP_SECRET_KEY = "Azure_App_Secret"
+AZURE_TENANT_ID = "Azure_Tenant_ID"
+
+# COMMAND ----------
+
+# DBTITLE 1,Disable User in Azure AD
 def disable_user(user_id):
     """
     Disables a user in Azure Active Directory using the Microsoft Graph API.
@@ -128,9 +145,9 @@ def disable_user(user_id):
         None
     """
     # Get API Token details from Databricks Secrets Manager
-    client_id = dbutils.secrets.get(scope = "DavidW", key = "Azure_Client_ID")
-    client_secret = dbutils.secrets.get(scope = "DavidW", key = "Azure_App_Secret")
-    tenant_id = dbutils.secrets.get(scope = "DavidW", key = "Azure_Tenant_ID")
+    client_id = dbutils.secrets.get(scope = SECRET_SCOPE, key = AZURE_CLIENT_ID_KEY)
+    client_secret = dbutils.secrets.get(scope = SECRET_SCOPE, key = AZURE_APP_SECRET_KEY)
+    tenant_id = dbutils.secrets.get(scope = SECRET_SCOPE, key = AZURE_TENANT_ID)
     
     # Get the Azure API App context
     app = ConfidentialClientApplication(
@@ -185,4 +202,5 @@ def disable_user_by_username(username):
 
 
 # Call the disable_user_by_username function with a specific user 
-disable_user_by_username(username)
+if ENABLE_DEMO:
+    disable_user_by_username(username)

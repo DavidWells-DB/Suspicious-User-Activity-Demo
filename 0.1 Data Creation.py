@@ -2,30 +2,47 @@
 # MAGIC %md
 # MAGIC ### Data Creation Notebook
 # MAGIC
-# MAGIC This notebook generates the data required for the detection, investigation and response notebooks.
+# MAGIC This notebook generates the data required for the detection, investigation and response notebooks. It saves the generated events to `/tmp/detection_maturity` folder in DBFS.
 
 # COMMAND ----------
 
-# MAGIC %run "../0.0 Prep/0.0 Helper Methods"
+# MAGIC %md 
+# MAGIC ### Run helper methods and import required libraries
 
 # COMMAND ----------
 
+# DBTITLE 1,Import helper methods
+# MAGIC %run "./0.0 Helper Methods"
+
+# COMMAND ----------
+
+# DBTITLE 1,Import required libraries
 # MAGIC %pip install faker
+
+# COMMAND ----------
+
+# DBTITLE 1,Delete old demo data
+# Delete the saved table folder
+dbutils.fs.rm("/tmp/detection_maturity", True)
+dbutils.fs.mkdirs("/tmp/detection_maturity")
+dbutils.fs.mkdirs("/tmp/detection_maturity/tables/")
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC # Demo Variables
 
 # COMMAND ----------
 
 # Notebook level variables
 
+###########################
+## CHANGE ME AS REQUIRED ##
+###########################
 debug = False
 target_user = 'David Wells' # The target malicious user
 target_user_email = 'david.wells@company.com' # The target malicious user's email
-
-# COMMAND ----------
-
-# Delete the saved table folder
-dbutils.fs.rm("/tmp/detection_maturity", True)
-dbutils.fs.mkdirs("/tmp/detection_maturity")
-dbutils.fs.mkdirs("/tmp/detection_maturity/tables/")
+target_user_azure_guid = '78687760-202a-4666-a79e-7cef89b8a44d' # Set this to the Azure Entra GUID of the user to be disabled in '3.1 [Response] Disable Suspicious User'
 
 # COMMAND ----------
 
@@ -409,16 +426,15 @@ else:
 # COMMAND ----------
 
 # DBTITLE 1,Generate Workday Data for the Malicious User
-spark.sql("""
-CREATE
-OR REPLACE TABLE workday (
-  employee VARCHAR(50),
-  department VARCHAR(50),
-  title VARCHAR(50)
-) USING DELTA LOCATION '/tmp/detection_maturity/tables/workday';
-""")
+data = [[target_user, 'Accounting', 'Manager']]
+df = spark.createDataFrame(data, ['employee', 'department', 'title'])
 
-spark.sql(f"INSERT INTO delta.`/tmp/detection_maturity/tables/workday` (employee, department, title) VALUES ('{target_user}', 'Accounting', 'Manager');")
+if debug:
+    df.display()
+else:
+    # Write table to temporary directory  
+    df.write.format("delta").format("delta").option("mergeSchema", "true").mode('overwrite').save('/tmp/detection_maturity/tables/workday')
+    df.display()
 
 # COMMAND ----------
 
@@ -828,12 +844,12 @@ def create_alerts():
 
     # Example data
     data = [
-        Row(ID=1, date=datetime.now(), alert_id=1001, alert_name="Failed Login", alert_desc="Multiple failed login attempts", 
+        Row(ID=34221, date=datetime.now(), alert_name="Failed Login", alert_desc="Multiple failed login attempts", 
             alert_status="Open", alert_source="System", alert_category="Authentication", alert_subcategory="Login", 
             tags="critical", entity_id="User1", entity_type="User", 
             alert_details={"IP": "192.168.1.1", "Attempts": "5"}),
         
-        Row(ID=2, date=datetime.now(), alert_id=1002, alert_name="Data Exfiltration", alert_desc="Large amount of data transferred", 
+        Row(ID=34222, date=datetime.now(), alert_name="Data Exfiltration", alert_desc="Large amount of data transferred", 
             alert_status="Open", alert_source="Network", alert_category="Data", alert_subcategory="Exfiltration", 
             tags="high", entity_id="User2", entity_type="User", 
             alert_details={"IP": "192.168.1.2", "DataSize": "1GB"})
@@ -873,24 +889,6 @@ def create_alerts():
     return df
 
 df = create_alerts()
-
-if debug:
-    df.display()
-else:
-    # Save the DataFrame as a table in the 'demo' database
-    df.write.format("delta").mode('overwrite').save('/tmp/detection_maturity/tables/alert')
-    df.display()
-
-# COMMAND ----------
-
-import random
-from faker import Faker
-from datetime import timedelta
-
-# Initialize the Faker generator
-fake = Faker()
-
-
 
 if debug:
     df.display()
@@ -982,29 +980,51 @@ if debug:
     df.display()
 else:
     # Save the DataFrame as a table in the 'demo' database
-    df.write.format("delta").mode('overwrite').save('/tmp/detection_maturity/tables/investigation")
+    df.write.format("delta").mode('overwrite').save('/tmp/detection_maturity/tables/investigation')
     df.display()
 
 # COMMAND ----------
 
-# MAGIC %sql
-# MAGIC CREATE OR REPLACE TABLE response_table (
-# MAGIC     ID LONG PRIMARY KEY, 
-# MAGIC     UserName VARCHAR(50), 
-# MAGIC     UserEmail VARCHAR(50), 
-# MAGIC     TriggerEvent VARCHAR(100), 
-# MAGIC     ResponseAction VARCHAR(100)
-# MAGIC ) USING DELTA LOCATION '/tmp/detection_maturity/tables/response_table';
-# MAGIC
-# MAGIC INSERT INTO delta.`/tmp/detection_maturity/tables/response_table` (ID, UserName, UserEmail, TriggerEvent, ResponseAction) VALUES
-# MAGIC     (1, 'JohnDoe', 'johndoe@example.com', 'Multiple Failed Login Attempts', 'Disable User'),
-# MAGIC     (2, 'JaneSmith', 'janesmith@example.com', 'Data Exfiltration Attempt', 'Disable User'),
-# MAGIC     (3, 'BobJohnson', 'bobjohnson@example.com', 'Unusual Access Pattern', 'Disable User'),
-# MAGIC     (4, 'AliceWilliams', 'alicewilliams@example.com', 'Privilege Escalation', 'Disable User'),
-# MAGIC     (5, 'CharlieBrown', 'charliebrown@example.com', 'Large Data Transfer', 'Disable User');
+# MAGIC %fs ls /tmp/detection_maturity/tables
 # MAGIC
 
 # COMMAND ----------
 
-spark.sql("CREATE OR REPLACE TABLE Users (Username STRING, ID STRING) USING DELTA LOCATION '/tmp/detection_maturity/tables/users'")
-spark.sql(f"INSERT INTO delta.`/tmp/detection_maturity/tables/users` VALUES ('{target_user}', '78687760-202a-4666-a79e-7cef89b8a44d')")
+from pyspark.sql import SparkSession
+from pyspark.sql.types import LongType, StringType, StructField, StructType
+
+# Define the schema corresponding to the SQL table definition
+schema = StructType([
+    StructField("ID", LongType(), True),
+    StructField("UserName", StringType(), True),
+    StructField("UserEmail", StringType(), True),
+    StructField("TriggerEvent", StringType(), True),
+    StructField("ResponseAction", StringType(), True),
+])
+
+# Use the schema to create a DataFrame
+data = [
+    (1, 'JohnDoe', 'johndoe@example.com', 'Multiple Failed Login Attempts', 'Disable User'),
+    (2, 'JaneSmith', 'janesmith@example.com', 'Data Exfiltration Attempt', 'Disable User'),
+    (3, 'BobJohnson', 'bobjohnson@example.com', 'Unusual Access Pattern', 'Disable User'),
+    (4, 'AliceWilliams', 'alicewilliams@example.com', 'Privilege Escalation', 'Disable User'),
+    (5, 'CharlieBrown', 'charliebrown@example.com', 'Large Data Transfer', 'Disable User')
+]
+
+# Create the dataframe
+df = spark.createDataFrame(data, schema)
+
+# Write the data to the Delta location
+df.write.format("delta").mode("overwrite").save("/tmp/detection_maturity/tables/response_table")
+
+# COMMAND ----------
+
+from pyspark.sql import SparkSession
+from pyspark.sql import Row
+
+# Create a DataFrame for the new row to be inserted
+new_user_row = [Row(Username=target_user, ID=target_user_azure_guid)]
+new_users_df = spark.createDataFrame(new_user_row)
+
+# Append the new row to the existing Delta files at the specified path
+new_users_df.write.format("delta").mode("append").save("/tmp/detection_maturity/tables/users")

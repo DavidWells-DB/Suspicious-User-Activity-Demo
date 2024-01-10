@@ -1,5 +1,37 @@
 # Databricks notebook source
-from pyspark.sql import SparkSession
+# MAGIC %md
+# MAGIC # Cyber Search, Detection and Investigation Helper Methods
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC This notebook contains helper methods for three categories of methods:
+# MAGIC 1. Get Helper Methods
+# MAGIC 1. Filter Helper Methods
+# MAGIC 1. Detection Pattern Methods
+# MAGIC
+# MAGIC They can be used to support a security operations team get up and running with Databricks pyspark.
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC
+# MAGIC # Get Helper Methods
+# MAGIC Get Helper Methods support getting data from Databricks Delta tables. The methods include:
+# MAGIC
+# MAGIC | Method | Description |
+# MAGIC | ------ | ----------- |
+# MAGIC | get_table | Retrieves a specific table from the Spark session based on the provided table name. |
+# MAGIC | sort_by_column | Sorts a DataFrame based on a specified column in either ascending or descending order. |
+# MAGIC | sort_by_columns | Sorts a DataFrame based on one or more specified columns in either ascending or descending order. |
+# MAGIC | select_columns | Selects specific columns from a DataFrame. |
+# MAGIC | aggregate_data | This function performs specified aggregations on a PySpark DataFrame and returns the result. |
+# MAGIC | join_tables | Joins two DataFrames based on a specified join column. |
+# MAGIC
+
+# COMMAND ----------
+
+from pyspark.sql import SparkSession, DataFrame
 from pyspark.sql.functions import col
 from datetime import datetime, timedelta
 
@@ -36,6 +68,34 @@ def sort_by_column(df, column_name, ascending=True):
     """
     return df.orderBy(col(column_name).asc() if ascending else col(column_name).desc())
 
+def sort_by_columns(df: DataFrame, column_names, ascending=True) -> DataFrame:
+    """
+    Sorts a DataFrame based on one or more specified columns in either ascending or descending order.
+
+    Args:
+        df (DataFrame): The input DataFrame to sort.
+        column_names (Union[str, List[str]]): The name(s) of the column(s) to sort by.
+        ascending (Union[bool, List[bool]], optional): Specifies the sorting order for each column.
+            Defaults to True (ascending order).
+
+    Returns:
+        DataFrame: The sorted DataFrame.
+
+    Examples:
+        sorted_df_single_column = sort_by_columns(df, 'column_name', ascending=False)
+        sorted_df_multiple_columns = sort_by_columns(df, ['column1', 'column2'], ascending=[False, True])
+    """
+    # Ensure column_names and ascending are lists of equal length
+    if isinstance(column_names, str):
+        column_names = [column_names]
+    if isinstance(ascending, bool):
+        ascending = [ascending] * len(column_names)
+    assert len(column_names) == len(ascending), "Length of column_names and ascending must be equal"
+    
+    # Create a list of column expressions for sorting
+    sort_exprs = [col(column).asc() if asc else col(column).desc() for column, asc in zip(column_names, ascending)]
+    
+    return df.orderBy(sort_exprs)
 
 def select_columns(df, *columns):
     """
@@ -103,9 +163,37 @@ def join_tables(df1, df2, join_column):
 
 # COMMAND ----------
 
+# MAGIC %md
+# MAGIC
+# MAGIC # Filter Helper Methods
+# MAGIC Filter Helper Methods support filtering DataFrames for data specific to your use case. The methods include:
+# MAGIC
+# MAGIC | Method | Description |
+# MAGIC | ------ | ----------- |
+# MAGIC | filter_column_by_value | Filters a DataFrame based on a value in a specific column. |
+# MAGIC | filter_columns_by_values | Filters a DataFrame based on a value in specific columns. |
+# MAGIC | filter_column_by_category | Filters a DataFrame based on a category in a specific column. |
+# MAGIC | filter_columns_by_categories | Filters a DataFrame based on a category in specific columns. |
+# MAGIC | filter_column_by_date_range | Filters a DataFrame based on a date range in a specific column. |
+# MAGIC | filter_columns_by_date_ranges | Filters a DataFrame based on a date range in specific columns. |
+# MAGIC | filter_by_time | Filters a DataFrame based on a specified time range. |
+# MAGIC | filter_by_relative_time | Filters a DataFrame based on a specified time range relative to the current time. |
+# MAGIC | filter_rows_with_any_null | Filters a DataFrame to include rows where any of the specified columns have a null value. |
+# MAGIC | filter_rows_with_all_null | Filters a DataFrame to include rows where all of the specified columns have a null value. |
+# MAGIC | filter_column_by_string_pattern | Filters a DataFrame based on a string pattern in a specific column. |
+# MAGIC | filter_columns_by_string_pattern | Filters a DataFrame based on a string pattern in specific columns. |
+# MAGIC | filter_column_by_multiple_conditions | Filters a DataFrame based on multiple conditions. |
+# MAGIC | filter_columns_by_multiple_conditions | Filters a DataFrame based on multiple conditions. |
+# MAGIC | filter_column_by_custom_function | Filters a DataFrame based on a custom function applied to a specific column. |
+# MAGIC | filter_columns_by_custom_function | Filters a DataFrame based on a custom function applied to specific columns. |
+# MAGIC
+
+# COMMAND ----------
+
 from pyspark.sql import functions as F
 from datetime import datetime, timedelta
 from pyspark.sql.functions import col, lit
+from functools import reduce
 
 # 1a. Filter by Value
 def filter_column_by_value(df, column, value):
@@ -284,46 +372,44 @@ def filter_by_relative_time(df, weeks=0, days=0, hours=0, minutes=0, seconds=0, 
     filter_time_str = filter_time.strftime('%Y-%m-%d %H:%M:%S')
     return df.filter(F.col(time_column) >= filter_time_str)
 
-# 4a. Filter by Null Values
-def filter_columns_by_null(df, columns):
+# 4a. Filter by Null values by OR
+
+def filter_rows_with_any_null(df, columns):
     """
-    Filters a DataFrame based on null values in specific columns.
-    This function allows to filter by multiple columns using OR logic.
+    Filters a DataFrame to include rows where any of the specified columns have a null value.
+    This function employs OR logic across the specified columns.
 
     Parameters:
     df (pyspark.sql.DataFrame): The DataFrame to filter.
     columns (list): The list of column names to filter on.
 
     Returns:
-    pyspark.sql.DataFrame: The filtered DataFrame.
+    pyspark.sql.DataFrame: The filtered DataFrame with rows where any of the specified columns have a null value.
 
     Example:
-    filter_by_null(df, ["Animal", "Color"])
+    filter_rows_with_any_null(df, ["Animal", "Color"])
     """
-    condition = F.lit(False)
-    for column in columns:
-        condition |= F.col(column).isNull()
-    df = df.filter(condition)
-    return df
+    condition = reduce(lambda x, y: x | y, (F.col(c).isNull() for c in columns))
+    return df.filter(condition)
 
-# 4b. Filter by Null Values
-def filter_columns_by_null(df, columns):
+# 4b. Filter by Null values by AND
+def filter_rows_with_all_null(df, columns):
     """
-    Filters a DataFrame based on null values in specific columns.
+    Filters a DataFrame to include rows where all of the specified columns have a null value.
+    This function employs AND logic across the specified columns by applying the filters sequentially.
 
     Parameters:
     df (pyspark.sql.DataFrame): The DataFrame to filter.
     columns (list): The list of column names to filter on.
 
     Returns:
-    pyspark.sql.DataFrame: The filtered DataFrame.
+    pyspark.sql.DataFrame: The filtered DataFrame with rows where all of the specified columns have a null value.
 
     Example:
-    filter_by_null(df, ["Animal"])
+    filter_rows_with_all_null(df, ["Animal", "Color"])
     """
-    for column in columns:
-        df = df.filter(F.col(column).isNull())
-    return df
+    condition = reduce(lambda x, y: x & y, (F.col(c).isNull() for c in columns))
+    return df.filter(condition)
 
 # 5a. Filter by String Pattern
 def filter_column_by_string_pattern(df, column, pattern):
@@ -442,6 +528,24 @@ def filter_columns_by_custom_function(df, filters):
         df = df.filter(condition)
     return df
 
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC
+# MAGIC # Detection Helper Methods
+# MAGIC Detection Helper Methods support executing detection logic on DataFrames relevant to your use case. The methods include:
+# MAGIC
+# MAGIC | Method | Description |
+# MAGIC | ------ | ----------- |
+# MAGIC | pattern_based_rule | Filters a DataFrame based on a pattern in a specific column. |
+# MAGIC | threshold_based_rule | Groups a DataFrame by a column and filters based on a count threshold. |
+# MAGIC | threshold_based_rule_multiple_group_by | Groups a DataFrame by multiple columns and filters based on a count threshold. |
+# MAGIC | statistical_anomaly_detection | Detects statistical anomalies in a DataFrame based on a z-score threshold. |
+# MAGIC | statistical_anomaly_detection_group_by | Detects statistical anomalies in a DataFrame based on a z-score threshold. |
+# MAGIC | trending_based_rule | Detects trends in a DataFrame based on a ratio threshold and time ranges. |
+# MAGIC | statistically_significant_window_by_std | This function identifies the records in the input dataframe where the count of events in the last window of time is statistically significantly higher than the mean count of events in previous windows. |
+# MAGIC
 
 # COMMAND ----------
 

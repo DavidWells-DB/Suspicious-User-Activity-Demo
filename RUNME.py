@@ -24,7 +24,11 @@
 # COMMAND ----------
 
 # DBTITLE 1,Load Notebook Companion Library
-# MAGIC %pip install git+https://github.com/databricks-academy/dbacademy@v1.0.13 git+https://github.com/databricks-industry-solutions/notebook-solution-companion@safe-print-html --quiet --disable-pip-version-check
+# MAGIC %pip install -U git+https://github.com/databricks-academy/dbacademy@v1.0.14 git+https://github.com/databricks-industry-solutions/notebook-solution-companion@safe-print-html --quiet --disable-pip-version-check
+
+# COMMAND ----------
+
+dbutils.library.restartPython()
 
 # COMMAND ----------
 
@@ -44,7 +48,23 @@ job_json = {
     "max_concurrent_runs": 1,
     "tasks": [
         {
+            "task_key": "Generate_Data",
+            "run_if": "ALL_SUCCESS",
+            "notebook_task": {
+                "notebook_path": f"/0.1 Data Creation",
+                "source": "WORKSPACE"
+            },
+            "job_cluster_key": "Suspicious_User_Activity_Cluster",
+            "timeout_seconds": 0,
+            "email_notifications": {}
+        },
+        {
             "task_key": "Investigate_Suspicious_Sharepoint_Activity",
+            "depends_on": [
+                {
+                    "task_key": "Generate_Data"
+                }
+            ],
             "run_if": "ALL_SUCCESS",
             "notebook_task": {
                 "notebook_path": f"/1.1 [Detection] Investigate Suspicious Document Access Activity",
@@ -56,6 +76,11 @@ job_json = {
         },
         {
             "task_key": "Suspicious_Number_Of_Emails_Sent_By_Employee",
+            "depends_on": [
+                {
+                    "task_key": "Generate_Data"
+                }
+            ],
             "run_if": "ALL_SUCCESS",
             "notebook_task": {
                 "notebook_path": f"1.2 [Detection] Suspicious Number of Emails Sent by Sender",
@@ -63,11 +88,7 @@ job_json = {
             },
             "job_cluster_key": "Suspicious_User_Activity_Cluster",
             "timeout_seconds": 0,
-            "email_notifications": {
-                "on_failure": [
-                    "david.wells@databricks.com"
-                ]
-            }
+            "email_notifications": {}
         },
         {
             "task_key": "Investigate_Suspicious_User",
@@ -102,11 +123,7 @@ job_json = {
             },
             "job_cluster_key": "Suspicious_User_Activity_Cluster",
             "timeout_seconds": 0,
-            "email_notifications": {
-                "on_failure": [
-                    "david.wells@databricks.com"
-                ]
-            }
+            "email_notifications": {}
         }
     ],
     "job_clusters": [
@@ -132,7 +149,7 @@ job_json = {
         }
     ],
     "tags": {
-        "ID": "2023.06.13",
+        "ID": "2024.01.10",
         "Team": "Cybersecurity"
     },
     "format": "MULTI_TASK"
