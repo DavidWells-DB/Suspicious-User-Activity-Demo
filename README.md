@@ -1,8 +1,5 @@
 # Suspicious-User-Activity-Demo
-This is a Databricks Cybersecurity demo for building linked detection, investigation and response jobs in Databricks
-
-# Suspicious-User-Activity-Demo
-This is a Cybersecurity demo for building linked detection, investigation and response jobs in Databricks.
+This is a Databricks Cybersecurity demo for building linked detection, investigation and response jobs in Databricks Workflows.
 
 ## Overview
 The Suspicious-User-Activity-Demo is designed to show how to use Databricks to detect, investigate, and response to a cybersecurity threat. In this demo, we focus on two concepts:
